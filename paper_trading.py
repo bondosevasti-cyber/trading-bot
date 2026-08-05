@@ -19,7 +19,7 @@ class PaperTrader:
                     self.trades = data.get("trades", [])
             except Exception as e:
                 print(f"⚠️ მონაცემების წაკითხვის შეცდომა {self.trades_file}: {e}")
-                self.save_data()
+                # DO NOT save_data() here, otherwise we overwrite the file with empty trades during a read collision
         else:
             self.save_data()
 
@@ -99,21 +99,27 @@ class PaperTrader:
                 return True, pnl
         return False, 0.0
 
-    def close_all(self, current_price):
+    def close_all(self, current_prices):
         open_trades = self.get_open_trades()
         total_pnl = 0.0
         for t in open_trades:
-            success, pnl = self.close_trade(t["id"], current_price, "CLOSED_PANIC")
-            if success:
-                total_pnl += pnl
+            symbol = t["symbol"]
+            current_price = current_prices.get(symbol)
+            if current_price is not None:
+                success, pnl = self.close_trade(t["id"], current_price, "CLOSED_PANIC")
+                if success:
+                    total_pnl += pnl
         return total_pnl
 
-    def get_unrealized_pnl(self, current_price):
+    def get_unrealized_pnl(self, current_prices):
         open_trades = self.get_open_trades()
         pnl = 0.0
         for t in open_trades:
-            if t["action"] == "BUY":
-                pnl += (current_price - t["entry_price"]) * t["qty"]
-            else:
-                pnl += (t["entry_price"] - current_price) * t["qty"]
+            symbol = t["symbol"]
+            current_price = current_prices.get(symbol)
+            if current_price is not None:
+                if t["action"] == "BUY":
+                    pnl += (current_price - t["entry_price"]) * t["qty"]
+                else:
+                    pnl += (t["entry_price"] - current_price) * t["qty"]
         return pnl
