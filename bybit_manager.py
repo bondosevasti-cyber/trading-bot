@@ -65,3 +65,27 @@ def close_all_positions():
     except Exception as e:
         print(f"Error closing positions: {e}")
         return False, str(e)
+
+def place_market_order(symbol, side, qty, sl, tp):
+    if not session:
+        return False, "Bybit API Keys not configured."
+    try:
+        # Convert side from BUY/SELL to Buy/Sell for Bybit
+        side = side.capitalize()
+        # Convert qty to string to avoid float precision issues with Bybit API
+        qty_str = str(qty)
+        
+        # Place Market Order with TP and SL attached
+        response = session.place_order(
+            category="linear",
+            symbol=symbol,
+            side=side,
+            orderType="Market",
+            qty=qty_str,
+            stopLoss=str(sl),
+            takeProfit=str(tp)
+        )
+        return True, response
+    except Exception as e:
+        print(f"Bybit Order Error: {e}")
+        return False, str(e)

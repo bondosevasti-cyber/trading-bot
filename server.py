@@ -140,7 +140,16 @@ def receive_signal():
     print(f"🎯 Take Profit: ${tp}")
     print("=========================================")
     
-    # 4. ვასრულებთ Paper Trade სიმულაციას
+    # 4. ვუშვებთ რეალურ ორდერს Bybit-ზე
+    success, response = bybit_manager.place_market_order(symbol, action, qty, sl, tp)
+    
+    if not success:
+        print(f"❌ Bybit Order Error: {response}")
+        return f"Bybit Order Error: {response}", 500
+        
+    print(f"✅ Bybit Order Placed Successfully!")
+    
+    # 5. ვინახავთ ლოკალურ ისტორიაში
     paper_trader.execute_trade(action, symbol, current_price, qty, sl, tp)
     
     return "სიგნალი მიღებულია", 200
