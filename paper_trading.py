@@ -68,3 +68,52 @@ class PaperTrader:
         print(f"💳 განახლებული ვირტუალური ბალანსი: ${self.balance:.2f}")
         print("=========================================")
         return True, trade
+
+    def get_open_trades(self):
+        self.load_data()
+        return [t for t in self.trades if t.get("status") == "OPEN"]
+
+    def close_trade(self, trade_id, current_price, reason="CLOSED"):
+        self.load_data()
+        for t in self.trades:
+            if t["id"] == trade_id and t.get("status") == "OPEN":
+                action = t["action"]
+                entry_price = t["entry_price"]
+                qty = t["qty"]
+                
+                if action == "BUY":
+                    pnl = (current_price - entry_price) * qty
+                else:
+                    pnl = (entry_price - current_price) * qty
+                    
+                # Add back the original cost plus PnL
+                self.balance += t["total_cost"] + pnl
+                
+                t["status"] = reason
+                t["close_price"] = current_price
+                t["pnl"] = pnl
+                t["close_time"] = datetime.now().isoformat()
+                
+                print(f"🔄 Trade #{trade_id} {reason} at {current_price}. PnL: ${pnl:.2f}")
+                self.save_data()
+                return True, pnl
+        return False, 0.0
+
+    def close_all(self, current_price):
+        open_trades = self.get_open_trades()
+        total_pnl = 0.0
+        for t in open_trades:
+            success, pnl = self.close_trade(t["id"], current_price, "CLOSED_PANIC")
+            if success:
+                total_pnl += pnl
+        return total_pnl
+
+    def get_unrealized_pnl(self, current_price):
+        open_trades = self.get_open_trades()
+        pnl = 0.0
+        for t in open_trades:
+            if t["action"] == "BUY":
+                pnl += (current_price - t["entry_price"]) * t["qty"]
+            else:
+                pnl += (t["entry_price"] - current_price) * t["qty"]
+        return pnl
