@@ -74,28 +74,36 @@ def index():
 
 @app.route('/api/status')
 def status():
-    paper_trader.load_data()
-    open_trades = paper_trader.get_open_trades()
-    symbols = list(set([t["symbol"] for t in open_trades]))
-    prices = {}
-    for sym in symbols:
-        p = get_price(sym)
-        if p: prices[sym] = p
+    try:
+        paper_trader.load_data()
+        open_trades = paper_trader.get_open_trades()
+        symbols = list(set([t["symbol"] for t in open_trades]))
+        prices = {}
+        for sym in symbols:
+            try:
+                p = get_price(sym)
+                if p: prices[sym] = p
+            except Exception as e:
+                print(f"Error fetching price for {sym} in status: {e}")
 
-    balance = paper_trader.balance
-    pnl = paper_trader.get_unrealized_pnl(prices)
+        balance = paper_trader.balance
+        pnl = paper_trader.get_unrealized_pnl(prices)
 
-    recent_trades = paper_trader.trades[-5:]
-    recent_trades.reverse()
+        recent_trades = paper_trader.trades[-5:]
+        recent_trades.reverse()
 
-    return jsonify({
-        "bot_active": BOT_ACTIVE,
-        "settings": SETTINGS,
-        "latest_signal": latest_signal_data,
-        "balance": balance,
-        "pnl": pnl,
-        "recent_trades": recent_trades
-    })
+        return jsonify({
+            "status": "success",
+            "bot_active": BOT_ACTIVE,
+            "settings": SETTINGS,
+            "latest_signal": latest_signal_data,
+            "balance": balance,
+            "pnl": pnl,
+            "recent_trades": recent_trades
+        })
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/toggle-bot', methods=['POST'])
 def toggle_bot():
