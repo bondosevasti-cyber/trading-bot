@@ -16,6 +16,11 @@
             --neon-sell: #ef4444;
             --neon-glow-buy: rgba(16, 185, 129, 0.5);
             --neon-glow-sell: rgba(239, 68, 68, 0.5);
+            --accent: #60a5fa;
+            --accent-glow: rgba(96, 165, 250, 0.5);
+            --danger: #dc2626;
+            --danger-glow: rgba(220, 38, 38, 0.5);
+            --warning: #f59e0b;
         }
 
         * {
@@ -29,78 +34,113 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            padding: 20px;
             background-image: 
                 radial-gradient(circle at 15% 50%, rgba(76, 29, 149, 0.15), transparent 25%),
                 radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.15), transparent 25%);
-            overflow: hidden;
-            perspective: 1000px;
+            display: flex;
+            justify-content: center;
         }
 
-        .dashboard {
-            width: 90%;
-            max-width: 800px;
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        .panel {
             background: var(--glass-bg);
             backdrop-filter: blur(16px) saturate(180%);
             -webkit-backdrop-filter: blur(16px) saturate(180%);
-            border-radius: 24px;
+            border-radius: 20px;
             border: 1px solid var(--glass-border);
-            padding: 40px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            transform: translateZ(0);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            position: relative;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        .dashboard:hover {
-            transform: translateY(-5px) rotateX(2deg) rotateY(-2deg);
-            box-shadow: 20px 30px 60px -10px rgba(0, 0, 0, 0.6);
-        }
-
+        /* Top Header */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
             border-bottom: 1px solid var(--glass-border);
-            padding-bottom: 20px;
+            padding-bottom: 15px;
         }
 
         .title {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 800;
-            letter-spacing: 1px;
             text-transform: uppercase;
             background: linear-gradient(to right, #60a5fa, #c084fc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .status-badge {
+        /* Controls */
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #fff;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
+        }
+
+        .btn-toggle {
+            flex: 1;
             background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
             color: var(--neon-buy);
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-size: 14px;
-            font-weight: 600;
-            border: 1px solid rgba(16, 185, 129, 0.2);
             box-shadow: 0 0 10px var(--neon-glow-buy);
         }
 
+        .btn-toggle.paused {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: var(--warning);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-panic {
+            flex: 1;
+            background: var(--danger);
+            box-shadow: 0 0 15px var(--danger-glow);
+        }
+
+        .btn:hover { filter: brightness(1.2); transform: translateY(-2px); }
+        .btn:active { transform: translateY(0); }
+
         .dot {
-            width: 8px;
-            height: 8px;
-            background-color: var(--neon-buy);
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            box-shadow: 0 0 8px var(--neon-buy);
+            background-color: currentColor;
+            box-shadow: 0 0 8px currentColor;
             animation: pulse 2s infinite;
         }
+        
+        .btn-toggle.paused .dot { animation: none; opacity: 0.5; }
 
         @keyframes pulse {
             0% { transform: scale(0.95); opacity: 0.8; }
@@ -108,173 +148,304 @@
             100% { transform: scale(0.95); opacity: 0.8; }
         }
 
+        /* Grid */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
         }
 
         .card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 20px;
-            transition: all 0.3s ease;
+            border-radius: 12px;
+            padding: 15px;
             position: relative;
             overflow: hidden;
         }
 
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%; width: 50%; height: 100%;
-            background: linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent);
-            transform: skewX(-20deg);
-        }
-
-        .update-anim::before {
-            animation: shine 0.6s ease-out;
-        }
-
-        @keyframes shine {
-            100% { left: 200%; }
-        }
+        .card-main { grid-column: 1 / -1; }
 
         .card-title {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
         }
 
         .card-value {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 800;
             color: #fff;
-            transition: color 0.3s ease;
         }
 
-        .action-BUY {
-            color: var(--neon-buy);
-            text-shadow: 0 0 15px var(--neon-glow-buy);
-        }
+        .action-BUY, .positive { color: var(--neon-buy); text-shadow: 0 0 10px var(--neon-glow-buy); }
+        .action-SELL, .negative { color: var(--neon-sell); text-shadow: 0 0 10px var(--neon-glow-sell); }
 
-        .action-SELL {
-            color: var(--neon-sell);
-            text-shadow: 0 0 15px var(--neon-glow-sell);
+        /* Forms */
+        .form-group {
+            margin-bottom: 15px;
         }
-
-        .timestamp {
-            margin-top: 30px;
-            text-align: right;
+        
+        .form-group label {
+            display: block;
             font-size: 12px;
             color: var(--text-muted);
+            margin-bottom: 5px;
         }
 
-        /* 3D specific styling for certain cards */
-        .card-main {
-            grid-column: 1 / -1;
-            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
-            border-left: 4px solid #60a5fa;
+        .form-group input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            outline: none;
         }
+        
+        .form-group input:focus { border-color: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+
+        .btn-save {
+            width: 100%;
+            background: rgba(96, 165, 250, 0.2);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            margin-top: 10px;
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 800;
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .status-OPEN { background: rgba(96, 165, 250, 0.2); color: var(--accent); }
+        .status-CLOSED_TP { background: rgba(16, 185, 129, 0.2); color: var(--neon-buy); }
+        .status-CLOSED_SL { background: rgba(239, 68, 68, 0.2); color: var(--neon-sell); }
     </style>
 </head>
 <body>
 
-    <div class="dashboard">
-        <div class="header">
-            <div class="title">Bot Dashboard</div>
-            <div class="status-badge">
-                <div class="dot"></div> Live
+    <div class="container">
+        <!-- Main Panel -->
+        <div class="panel">
+            <div class="header">
+                <div class="title">Trading Bot Interface</div>
+            </div>
+
+            <div class="controls-row">
+                <button class="btn btn-toggle" id="btn-toggle" onclick="toggleBot()">
+                    <div class="dot"></div> <span id="toggle-text">Bot is Live</span>
+                </button>
+                <button class="btn btn-panic" onclick="closeAllPositions()">
+                    ⚠️ CLOSE ALL POSITIONS
+                </button>
+            </div>
+
+            <div class="grid">
+                <div class="card card-main">
+                    <div class="card-title">Bybit USDT Balance</div>
+                    <div class="card-value" id="val-balance">$0.00</div>
+                </div>
+                <div class="card card-main">
+                    <div class="card-title">Unrealized PnL</div>
+                    <div class="card-value" id="val-pnl">$0.00</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Latest Symbol</div>
+                    <div class="card-value" id="val-symbol">-</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Latest Action</div>
+                    <div class="card-value" id="val-action">-</div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 20px; font-size: 16px; color: var(--text-muted);">Trade History</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Time</th>
+                            <th>Pair</th>
+                            <th>Action</th>
+                            <th>Entry</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trade-history">
+                        <tr><td colspan="6" style="text-align:center;">No trades yet</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div class="grid">
-            <div class="card card-main" id="card-symbol">
-                <div class="card-title">Trading Pair</div>
-                <div class="card-value" id="val-symbol">-</div>
+        <!-- Side Panel (Settings) -->
+        <div class="panel">
+            <div class="header">
+                <div class="title" style="font-size: 18px;">Settings</div>
             </div>
             
-            <div class="card" id="card-action">
-                <div class="card-title">Action</div>
-                <div class="card-value" id="val-action">-</div>
+            <div class="form-group">
+                <label>Risk Per Trade (USD approx)</label>
+                <input type="number" step="0.1" id="input-risk" value="2.0">
             </div>
-            
-            <div class="card" id="card-price">
-                <div class="card-title">Current Price</div>
-                <div class="card-value" id="val-price">$0.00</div>
+            <div class="form-group">
+                <label>Default Stop Loss (%)</label>
+                <input type="number" step="0.1" id="input-sl" value="1.0">
             </div>
-
-            <div class="card" id="card-qty">
-                <div class="card-title">Quantity</div>
-                <div class="card-value" id="val-qty">0.000000</div>
+            <div class="form-group">
+                <label>Default Take Profit (%)</label>
+                <input type="number" step="0.1" id="input-tp" value="2.0">
             </div>
-
-            <div class="card" id="card-sl">
-                <div class="card-title">Stop Loss</div>
-                <div class="card-value" id="val-sl">$0.00</div>
-            </div>
-
-            <div class="card" id="card-tp">
-                <div class="card-title">Take Profit</div>
-                <div class="card-value" id="val-tp">$0.00</div>
-            </div>
-        </div>
-
-        <div class="timestamp">
-            Last Update: <span id="val-timestamp">Waiting for signal...</span>
+            <button class="btn btn-save" onclick="updateSettings()">Save Settings</button>
         </div>
     </div>
 
     <script>
-        let lastDataString = "";
+        let botActive = true;
 
         async function fetchStatus() {
             try {
                 const response = await fetch('/api/status');
                 const data = await response.json();
-                const newDataString = JSON.stringify(data);
-                
-                if (newDataString !== lastDataString) {
-                    updateUI(data);
-                    lastDataString = newDataString;
-                }
+                updateUI(data);
             } catch (err) {
                 console.error("Error fetching status:", err);
             }
         }
 
         function updateUI(data) {
-            const elements = ['symbol', 'action', 'price', 'qty', 'sl', 'tp'];
+            // Update Toggle Button
+            botActive = data.bot_active;
+            const btnToggle = document.getElementById('btn-toggle');
+            const toggleText = document.getElementById('toggle-text');
+            if (botActive) {
+                btnToggle.className = 'btn btn-toggle';
+                toggleText.innerText = 'Bot is Live';
+            } else {
+                btnToggle.className = 'btn btn-toggle paused';
+                toggleText.innerText = 'Bot is Paused';
+            }
+
+            // Settings Fields (Only update if user is not currently typing)
+            if (document.activeElement.tagName !== "INPUT") {
+                document.getElementById('input-risk').value = data.settings.RISK_PERCENT;
+                document.getElementById('input-sl').value = data.settings.DEFAULT_SL;
+                document.getElementById('input-tp').value = data.settings.DEFAULT_TP;
+            }
+
+            // Dashboard Values
+            document.getElementById('val-balance').textContent = `$${data.balance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
             
-            document.getElementById('val-symbol').textContent = data.symbol;
+            const pnlEl = document.getElementById('val-pnl');
+            pnlEl.textContent = `$${data.pnl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            pnlEl.className = 'card-value ' + (data.pnl > 0 ? 'positive' : (data.pnl < 0 ? 'negative' : ''));
+
+            document.getElementById('val-symbol').textContent = data.latest_signal.symbol;
             
             const actionEl = document.getElementById('val-action');
-            actionEl.textContent = data.action;
-            if (data.action === "BUY" || data.action === "SELL") {
-                actionEl.className = `card-value action-${data.action}`;
+            actionEl.textContent = data.latest_signal.action;
+            if (data.latest_signal.action === "BUY" || data.latest_signal.action === "SELL") {
+                actionEl.className = `card-value action-${data.latest_signal.action}`;
             }
-            
-            document.getElementById('val-price').textContent = data.current_price ? `$${data.current_price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : "$0.00";
-            document.getElementById('val-qty').textContent = data.qty ? data.qty : "0.000000";
-            document.getElementById('val-sl').textContent = data.sl ? `$${data.sl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : "$0.00";
-            document.getElementById('val-tp').textContent = data.tp ? `$${data.tp.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : "$0.00";
-            document.getElementById('val-timestamp').textContent = data.timestamp;
 
-            // Trigger shine animation on cards
-            elements.forEach(el => {
-                const card = document.getElementById(`card-${el}`);
-                card.classList.remove('update-anim');
-                void card.offsetWidth; // trigger reflow
-                card.classList.add('update-anim');
-            });
+            // Update Table
+            const tbody = document.getElementById('trade-history');
+            if (data.recent_trades && data.recent_trades.length > 0) {
+                tbody.innerHTML = '';
+                data.recent_trades.forEach(t => {
+                    const time = new Date(t.timestamp).toLocaleTimeString();
+                    const actionClass = t.action === 'BUY' ? 'action-BUY' : 'action-SELL';
+                    const statusClass = `status-badge status-${t.status}`;
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>#${t.id}</td>
+                        <td>${time}</td>
+                        <td>${t.symbol}</td>
+                        <td class="${actionClass}" style="font-weight:bold">${t.action}</td>
+                        <td>$${t.entry_price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td><span class="${statusClass}">${t.status}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
         }
 
-        // Poll every 2.5 seconds
-        setInterval(fetchStatus, 2500);
-        
-        // Initial fetch
+        async function toggleBot() {
+            try {
+                const res = await fetch('/api/toggle-bot', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({active: !botActive})
+                });
+                fetchStatus();
+            } catch (err) { alert("Error toggling bot"); }
+        }
+
+        async function closeAllPositions() {
+            if(!confirm("Are you sure you want to close ALL open positions immediately?")) return;
+            try {
+                const res = await fetch('/api/close-all', { method: 'POST' });
+                const data = await res.json();
+                alert(data.message);
+                fetchStatus();
+            } catch (err) { alert("Error closing positions"); }
+        }
+
+        async function updateSettings() {
+            const r = document.getElementById('input-risk').value;
+            const sl = document.getElementById('input-sl').value;
+            const tp = document.getElementById('input-tp').value;
+            try {
+                const res = await fetch('/api/update-settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        risk_percent: parseFloat(r),
+                        sl_percent: parseFloat(sl),
+                        tp_percent: parseFloat(tp)
+                    })
+                });
+                alert("Settings saved successfully!");
+                fetchStatus();
+            } catch (err) { alert("Error saving settings"); }
+        }
+
+        setInterval(fetchStatus, 3000);
         fetchStatus();
     </script>
 </body>
