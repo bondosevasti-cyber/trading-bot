@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Bot Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --glass-bg: rgba(17, 25, 40, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.125);
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --neon-buy: #10b981;
+            --neon-sell: #ef4444;
+            --neon-glow-buy: rgba(16, 185, 129, 0.5);
+            --neon-glow-sell: rgba(239, 68, 68, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(76, 29, 149, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.15), transparent 25%);
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        .dashboard {
+            width: 90%;
+            max-width: 800px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform: translateZ(0);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .dashboard:hover {
+            transform: translateY(-5px) rotateX(2deg) rotateY(-2deg);
+            box-shadow: 20px 30px 60px -10px rgba(0, 0, 0, 0.6);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 20px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: linear-gradient(to right, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--neon-buy);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            box-shadow: 0 0 10px var(--neon-glow-buy);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--neon-buy);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--neon-buy);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent);
+            transform: skewX(-20deg);
+        }
+
+        .update-anim::before {
+            animation: shine 0.6s ease-out;
+        }
+
+        @keyframes shine {
+            100% { left: 200%; }
+        }
+
+        .card-title {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #fff;
+            transition: color 0.3s ease;
+        }
+
+        .action-BUY {
+            color: var(--neon-buy);
+            text-shadow: 0 0 15px var(--neon-glow-buy);
+        }
+
+        .action-SELL {
+            color: var(--neon-sell);
+            text-shadow: 0 0 15px var(--neon-glow-sell);
+        }
+
+        .timestamp {
+            margin-top: 30px;
+            text-align: right;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* 3D specific styling for certain cards */
+        .card-main {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+            border-left: 4px solid #60a5fa;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div class="header">
+            <div class="title">Bot Dashboard</div>
+            <div class="status-badge">
+                <div class="dot"></div> Live
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card card-main" id="card-symbol">
+                <div class="card-title">Trading Pair</div>
+                <div class="card-value" id="val-symbol">-</div>
+            </div>
+            
+            <div class="card" id="card-action">
+                <div class="card-title">Action</div>
+                <div class="card-value" id="val-action">-</div>
+            </div>
+            
+            <div class="card" id="card-price">
+                <div class="card-title">Current Price</div>
+                <div class="card-value" id="val-price">$0.00</div>
+            </div>
+
+            <div class="card" id="card-qty">
+                <div class="card-title">Quantity</div>
+                <div class="card-value" id="val-qty">0.000000</div>
+            </div>
+
+            <div class="card" id="card-sl">
+                <div class="card-title">Stop Loss</div>
+                <div class="card-value" id="val-sl">$0.00</div>
+            </div>
+
+            <div class="card" id="card-tp">
+                <div class="card-title">Take Profit</div>
+                <div class="card-value" id="val-tp">$0.00</div>
+            </div>
+        </div>
+
+        <div class="timestamp">
+            Last Update: <span id="val-timestamp">Waiting for signal...</span>
+        </div>
+    </div>
+
+    <script>
+        let lastDataString = "";
+
+        async function fetchStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                const newDataString = JSON.stringify(data);
+                
+                if (newDataString !== lastDataString) {
+                    updateUI(data);
+                    lastDataString = newDataString;
+                }
+            } catch (err) {
+                console.error("Error fetching status:", err);
+            }
+        }
+
+        function updateUI(data) {
+            const elements = ['symbol', 'action', 'price', 'qty', 'sl', 'tp'];
+            
+            document.getElementById('val-symbol').textContent = data.symbol;
+            
+            const actionEl = document.getElementById('val-action');
+            actionEl.textContent = data.action;
+            if (data.action === "BUY" || data.action === "SELL") {
+                actionEl.className = `card-value action-${data.action}`;
+            }
+            
+            document.getElementById('val-price').textContent = data.current_price ? `$${data.current_price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : "$0.00";
+            document.getElementById('val-qty').textContent = data.qty ? data.qty : "0.000000";
+            document.getElementById('val-sl').textContent = data.sl ? `$${data.sl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : "$0.00";
+            document.getElementById('val-tp').textContent = data.tp ? `$${data.tp.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : "$0.00";
+            document.getElementById('val-timestamp').textContent = data.timestamp;
+
+            // Trigger shine animation on cards
+            elements.forEach(el => {
+                const card = document.getElementById(`card-${el}`);
+                card.classList.remove('update-anim');
+                void card.offsetWidth; // trigger reflow
+                card.classList.add('update-anim');
+            });
+        }
+
+        // Poll every 2.5 seconds
+        setInterval(fetchStatus, 2500);
+        
+        // Initial fetch
+        fetchStatus();
+    </script>
+</body>
+</html>
