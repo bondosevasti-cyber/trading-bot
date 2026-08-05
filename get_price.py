@@ -4,7 +4,8 @@ def get_btc_price():
     try:
         # Bybit-ის საჯარო მისამართი ფასების მისაღებად
         url = "https://api.bybit.com/v5/market/tickers?category=spot&symbol=BTCUSDT"
-        response = requests.get(url, timeout=5)
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=5)
         response.raise_for_status()
         data = response.json()
         
