@@ -32,6 +32,7 @@ class PaperTrader:
             json.dump(data, f, indent=4)
 
     def execute_trade(self, action, symbol, entry_price, qty, stop_loss, take_profit):
+        self.load_data()
         total_cost = round(qty * entry_price, 2)
         
         if self.balance < total_cost:

@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request
 from risk_manager import calculate_position
 from get_price import get_btc_price  # 1. შემოვპორტოთ ფასის წამოღების ფუნქცია
@@ -14,9 +15,15 @@ def receive_signal():
     
     # 2. ვიღებთ ბიტკოინის რეალურ ფასს ბირჟიდან
     current_price = get_btc_price()
+    if current_price is None:
+        print("❌ ფასის მიღება ვერ მოხერხდა")
+        return "ფასის მიღება ვერ მოხერხდა", 500
+    
+    action = data.get('action', 'BUY')
+    symbol = data.get('symbol', 'BTCUSDT')
     
     # 3. ვითვლით რისკებს რეალური ფასის მიხედვით
-    qty, sl, tp = calculate_position(current_price)
+    qty, sl, tp = calculate_position(current_price, action=action)
     
     print(f"📈 მიმდინარე ფასი: ${current_price}")
     print(f"🪙 პოზიციის ზომა ($10-ის): {qty} BTC")
@@ -25,12 +32,11 @@ def receive_signal():
     print("=========================================")
     
     # 4. ვასრულებთ Paper Trade სიმულაციას
-    action = data.get('action', 'BUY')
-    symbol = data.get('symbol', 'BTCUSDT')
     paper_trader.execute_trade(action, symbol, current_price, qty, sl, tp)
     
     return "სიგნალი მიღებულია", 200
 
 if __name__ == '__main__':
-    print("ჩვენი სავაჭრო ბოტი უსმენს სიგნალებს 5000 პორტზე...")
-    app.run(port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    print(f"ჩვენი სავაჭრო ბოტი უსმენს სიგნალებს {port} პორტზე...")
+    app.run(host='0.0.0.0', port=port)
