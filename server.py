@@ -103,7 +103,16 @@ def status():
         })
     except Exception as e:
         traceback.print_exc()
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+            "bot_active": BOT_ACTIVE,
+            "settings": SETTINGS,
+            "latest_signal": latest_signal_data,
+            "balance": 1000.0,
+            "pnl": 0.0,
+            "recent_trades": []
+        }), 200
 
 @app.route('/api/toggle-bot', methods=['POST'])
 def toggle_bot():

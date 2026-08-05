@@ -366,10 +366,10 @@
 
             // Settings Fields (Only update if user is not currently typing)
             if (document.activeElement.tagName !== "INPUT") {
-                document.getElementById('input-risk').value = data.settings.RISK_PERCENT;
-                document.getElementById('input-sl').value = data.settings.DEFAULT_SL;
-                document.getElementById('input-tp').value = data.settings.DEFAULT_TP;
-                if(data.settings.ALLOWED_PAIRS) {
+                document.getElementById('input-risk').value = data.settings?.RISK_PERCENT || 2.0;
+                document.getElementById('input-sl').value = data.settings?.DEFAULT_SL || 1.0;
+                document.getElementById('input-tp').value = data.settings?.DEFAULT_TP || 2.0;
+                if(data.settings?.ALLOWED_PAIRS) {
                     document.getElementById('input-pairs').value = data.settings.ALLOWED_PAIRS;
                 }
             }
