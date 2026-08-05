@@ -391,9 +391,9 @@
 
             // Update Table
             const tbody = document.getElementById('trade-history');
-            if (data.recent_trades && data.recent_trades.length > 0) {
+            if (data.trades && data.trades.length > 0) {
                 tbody.innerHTML = '';
-                data.recent_trades.forEach(t => {
+                data.trades.forEach(t => {
                     const time = new Date(t.timestamp).toLocaleTimeString();
                     const actionClass = t.action === 'BUY' ? 'action-BUY' : 'action-SELL';
                     const statusClass = `status-badge status-${t.status}`;

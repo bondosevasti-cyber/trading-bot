@@ -89,8 +89,8 @@ def status():
         balance = paper_trader.balance
         pnl = paper_trader.get_unrealized_pnl(prices)
 
-        recent_trades = paper_trader.trades[-5:]
-        recent_trades.reverse()
+        trades = list(paper_trader.trades)
+        trades.reverse()
 
         return jsonify({
             "status": "success",
@@ -99,7 +99,7 @@ def status():
             "latest_signal": latest_signal_data,
             "balance": balance,
             "pnl": pnl,
-            "recent_trades": recent_trades
+            "trades": trades
         })
     except Exception as e:
         traceback.print_exc()
@@ -111,7 +111,7 @@ def status():
             "latest_signal": latest_signal_data,
             "balance": 1000.0,
             "pnl": 0.0,
-            "recent_trades": []
+            "trades": []
         }), 200
 
 @app.route('/api/toggle-bot', methods=['POST'])
