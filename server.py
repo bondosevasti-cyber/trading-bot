@@ -5,19 +5,19 @@ import traceback
 from datetime import datetime
 from flask import Flask, request, render_template, jsonify
 from risk_manager import calculate_position
-from get_price import get_btc_price
+from get_price import get_price
 from paper_trading import PaperTrader
 
 app = Flask(__name__)
-# Initialize PaperTrader with 1000.0 internal balance
 paper_trader = PaperTrader(initial_balance=1000.0)
 
 # ----------------- GLOBALS & SETTINGS -----------------
 BOT_ACTIVE = True
 SETTINGS = {
-    'RISK_PERCENT': 2.0,   # Capital risk per trade
-    'DEFAULT_SL': 1.0,     # Stop Loss %
-    'DEFAULT_TP': 2.0      # Take Profit %
+    'RISK_PERCENT': 2.0,
+    'DEFAULT_SL': 1.0,
+    'DEFAULT_TP': 2.0,
+    'ALLOWED_PAIRS': 'BTCUSDT, ETHUSDT, SOLUSDT, AAPL, TSLA, EURUSD=X, GC=F'
 }
 
 latest_signal_data = {
@@ -36,9 +36,16 @@ def start_monitoring():
         try:
             open_trades = paper_trader.get_open_trades()
             if open_trades:
-                current_price = get_btc_price()
-                if current_price:
-                    for t in open_trades:
+                symbols = list(set([t["symbol"] for t in open_trades]))
+                prices = {}
+                for sym in symbols:
+                    p = get_price(sym)
+                    if p: prices[sym] = p
+                
+                for t in open_trades:
+                    sym = t["symbol"]
+                    current_price = prices.get(sym)
+                    if current_price:
                         action = t["action"]
                         sl = t["stop_loss"]
                         tp = t["take_profit"]
@@ -57,7 +64,6 @@ def start_monitoring():
             print(f"Monitor Error: {e}")
         time.sleep(5)
 
-# Start background thread
 monitor_thread = threading.Thread(target=start_monitoring, daemon=True)
 monitor_thread.start()
 
@@ -68,15 +74,19 @@ def index():
 
 @app.route('/api/status')
 def status():
-    # Fetch current price for active PnL calculation
-    current_price = get_btc_price() or 0.0
-    
     paper_trader.load_data()
+    open_trades = paper_trader.get_open_trades()
+    symbols = list(set([t["symbol"] for t in open_trades]))
+    prices = {}
+    for sym in symbols:
+        p = get_price(sym)
+        if p: prices[sym] = p
+
     balance = paper_trader.balance
-    pnl = paper_trader.get_unrealized_pnl(current_price) if current_price > 0 else 0.0
+    pnl = paper_trader.get_unrealized_pnl(prices)
 
     recent_trades = paper_trader.trades[-5:]
-    recent_trades.reverse() # Show newest first
+    recent_trades.reverse()
 
     return jsonify({
         "bot_active": BOT_ACTIVE,
@@ -99,11 +109,15 @@ def toggle_bot():
 
 @app.route('/api/close-all', methods=['POST'])
 def close_all():
-    current_price = get_btc_price()
-    if current_price:
-        total_pnl = paper_trader.close_all(current_price)
-        return jsonify({"success": True, "message": f"All open trades closed. Total realized PnL: ${total_pnl:.2f}"})
-    return jsonify({"success": False, "message": "Failed to get current price for closing."})
+    open_trades = paper_trader.get_open_trades()
+    symbols = list(set([t["symbol"] for t in open_trades]))
+    prices = {}
+    for sym in symbols:
+        p = get_price(sym)
+        if p: prices[sym] = p
+        
+    total_pnl = paper_trader.close_all(prices)
+    return jsonify({"success": True, "message": f"All open trades closed. Total realized PnL: ${total_pnl:.2f}"})
 
 @app.route('/api/update-settings', methods=['POST'])
 def update_settings():
@@ -112,6 +126,8 @@ def update_settings():
     SETTINGS['RISK_PERCENT'] = float(data.get('risk_percent', SETTINGS['RISK_PERCENT']))
     SETTINGS['DEFAULT_SL'] = float(data.get('sl_percent', SETTINGS['DEFAULT_SL']))
     SETTINGS['DEFAULT_TP'] = float(data.get('tp_percent', SETTINGS['DEFAULT_TP']))
+    if 'allowed_pairs' in data:
+        SETTINGS['ALLOWED_PAIRS'] = data['allowed_pairs']
     return jsonify({"success": True, "settings": SETTINGS})
 
 @app.route('/webhook', methods=['POST'])
@@ -119,12 +135,18 @@ def receive_signal():
     global latest_signal_data
     
     if not BOT_ACTIVE:
-        print("⚠️ სიგნალი იგნორირებულია: ბოტი გათიშულია (Paused).")
+        print("⚠️ სიგნალი იგნორირებულია: ბოტი გათიშულია.")
         return "ბოტი გათიშულია", 200
 
     data = request.json or {}
     print("=========================================")
     print(f"🚨 მივიღეთ ახალი სიგნალი: {data}")
+    
+    symbol = data.get('symbol', 'BTCUSDT').upper()
+    allowed_pairs = [s.strip().upper() for s in SETTINGS['ALLOWED_PAIRS'].split(',')]
+    if symbol not in allowed_pairs:
+        print(f"⚠️ სიგნალი იგნორირებულია: სიმბოლო {symbol} არ არის დაშვებულ სიაში.")
+        return f"Symbol {symbol} not allowed", 200
     
     current_price = data.get('price')
     if current_price:
@@ -135,19 +157,18 @@ def receive_signal():
             current_price = None
             
     if current_price is None:
-        current_price = get_btc_price()
+        current_price = get_price(symbol)
         
     if current_price is None:
-        print("❌ ფასის მიღება ვერ მოხერხდა არც სიგნალიდან და არც API-დან.")
+        print(f"❌ ფასის მიღება ვერ მოხერხდა {symbol}-სთვის.")
         traceback.print_exc()
         return "ფასის მიღება ვერ მოხერხდა", 500
     
-    action = data.get('action', 'BUY')
-    symbol = data.get('symbol', 'BTCUSDT')
+    action = data.get('action', 'BUY').upper()
     
     sl_fraction = SETTINGS['DEFAULT_SL'] / 100.0
     reward_ratio = SETTINGS['DEFAULT_TP'] / SETTINGS['DEFAULT_SL'] if SETTINGS['DEFAULT_SL'] > 0 else 2.0
-    usd_amount = (SETTINGS['RISK_PERCENT'] / 100.0) * paper_trader.balance # Use actual risk percentage of current balance
+    usd_amount = (SETTINGS['RISK_PERCENT'] / 100.0) * paper_trader.balance
     
     qty, sl, tp = calculate_position(current_price, action=action, USD_amount=usd_amount, risk_percent=sl_fraction, reward_ratio=reward_ratio)
     
@@ -161,13 +182,12 @@ def receive_signal():
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     })
     
-    print(f"📈 მიმდინარე ფასი: ${current_price}")
-    print(f"🪙 პოზიციის ზომა: {qty} BTC")
+    print(f"📈 {symbol} მიმდინარე ფასი: ${current_price}")
+    print(f"🪙 პოზიციის ზომა: {qty}")
     print(f"🛑 Stop Loss: ${sl}")
     print(f"🎯 Take Profit: ${tp}")
     print("=========================================")
     
-    # Fully Internal Paper Trading Execution
     success, trade = paper_trader.execute_trade(action, symbol, current_price, qty, sl, tp)
     if not success:
         return "Insufficient virtual balance", 400

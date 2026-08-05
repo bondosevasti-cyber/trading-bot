@@ -330,6 +330,10 @@
                 <label>Default Take Profit (%)</label>
                 <input type="number" step="0.1" id="input-tp" value="2.0">
             </div>
+            <div class="form-group">
+                <label>Allowed Pairs (comma separated)</label>
+                <input type="text" id="input-pairs" value="BTCUSDT, ETHUSDT, AAPL, EURUSD=X">
+            </div>
             <button class="btn btn-save" onclick="updateSettings()">Save Settings</button>
         </div>
     </div>
@@ -365,6 +369,9 @@
                 document.getElementById('input-risk').value = data.settings.RISK_PERCENT;
                 document.getElementById('input-sl').value = data.settings.DEFAULT_SL;
                 document.getElementById('input-tp').value = data.settings.DEFAULT_TP;
+                if(data.settings.ALLOWED_PAIRS) {
+                    document.getElementById('input-pairs').value = data.settings.ALLOWED_PAIRS;
+                }
             }
 
             // Dashboard Values
@@ -430,6 +437,7 @@
             const r = document.getElementById('input-risk').value;
             const sl = document.getElementById('input-sl').value;
             const tp = document.getElementById('input-tp').value;
+            const pairs = document.getElementById('input-pairs').value;
             try {
                 const res = await fetch('/api/update-settings', {
                     method: 'POST',
@@ -437,7 +445,8 @@
                     body: JSON.stringify({
                         risk_percent: parseFloat(r),
                         sl_percent: parseFloat(sl),
-                        tp_percent: parseFloat(tp)
+                        tp_percent: parseFloat(tp),
+                        allowed_pairs: pairs
                     })
                 });
                 alert("Settings saved successfully!");
