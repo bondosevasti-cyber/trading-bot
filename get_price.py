@@ -9,8 +9,8 @@ def get_btc_price():
         res = requests.get(url, headers=headers, timeout=5)
         if res.status_code == 200:
             return float(res.json()['price'])
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"❌ Error details (Binance): {e}")
 
     # წყარო 2: CoinGecko API (სარეზერვო, უსასყიდლო)
     try:
@@ -18,8 +18,17 @@ def get_btc_price():
         res = requests.get(url, headers=headers, timeout=5)
         if res.status_code == 200:
             return float(res.json()['bitcoin']['usd'])
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"❌ Error details (CoinGecko): {e}")
+
+    # წყარო 3: CryptoCompare API (სარეზერვო)
+    try:
+        url = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD"
+        res = requests.get(url, headers=headers, timeout=5)
+        if res.status_code == 200:
+            return float(res.json()['USD'])
+    except Exception as e:
+        print(f"❌ Error details (CryptoCompare): {e}")
 
     return None
 

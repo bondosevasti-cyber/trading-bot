@@ -1,4 +1,5 @@
 import os
+import traceback
 from datetime import datetime
 from flask import Flask, request, render_template, jsonify
 from risk_manager import calculate_position
@@ -32,10 +33,21 @@ def receive_signal():
     print("=========================================")
     print(f"🚨 მივიღეთ ახალი სიგნალი: {data}")
     
-    # 2. ვიღებთ ბიტკოინის რეალურ ფასს ბირჟიდან
-    current_price = get_btc_price()
+    # 2. ვიღებთ ბიტკოინის ფასს (ჯერ ვამოწმებთ Payload-ს, შემდეგ API-ს)
+    current_price = data.get('price')
+    if current_price:
+        try:
+            current_price = float(current_price)
+            print(f"💲 ფასი წამოვიდა პირდაპირ სიგნალიდან: ${current_price}")
+        except ValueError:
+            current_price = None
+            
     if current_price is None:
-        print("❌ ფასის მიღება ვერ მოხერხდა")
+        current_price = get_btc_price()
+        
+    if current_price is None:
+        print("❌ ფასის მიღება ვერ მოხერხდა არც სიგნალიდან და არც API-დან.")
+        traceback.print_exc()
         return "ფასის მიღება ვერ მოხერხდა", 500
     
     action = data.get('action', 'BUY')
